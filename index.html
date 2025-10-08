@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Formulář – Pracovní úraz (A–D)</title>
+<style>
+  :root{
+    --bg:#f3f4f6; --card:#ffffff; --muted:#6b7280; --text:#111827;
+    --accent:#2563eb; --accent-2:#0ea5e9; --border:#e5e7eb; --field:#ffffff;
+    --danger:#ef4444; --danger-bg:#fee2e2; --danger-border:#b91c1c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:500 16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+
+  header{
+    position:sticky;top:0;z-index:5;padding:16px 18px;border-bottom:1px solid var(--border);
+    background:linear-gradient(90deg,#ffffffd9,#f8fafcd9);
+    backdrop-filter:saturate(1.1) blur(4px)
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:20px}
+  h1{margin:0 0 4px;font-size:28px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;align-items:flex-start}
+  button{
+    appearance:none;border:1px solid transparent;border-radius:10px;padding:10px 14px;color:#fff;cursor:pointer;font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 6px 14px rgba(37,99,235,.22);
+    transition:transform .06s ease,box-shadow .2s ease
+  }
+  button.word{background:linear-gradient(135deg,#4f46e5,#06b6d4); box-shadow:0 6px 16px rgba(79,70,229,.28)}
+  button.ghost{background:#f8fafc;color:#111827;border:1px solid var(--border)}
+  button:hover{transform:translateY(-1px)}
+  .hint{font-size:12.5px;color:#4b5563;margin-top:6px;max-width:380px}
+
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(12,minmax(0,1fr))}
+  .card{grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 14px}
+  .card h2{margin:0 0 10px;font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px}
+  .badge{display:inline-grid;place-items:center;min-width:32px;min-height:32px;border-radius:8px;font-weight:900;background:#eef2ff;border:1px solid #e5e7eb;color:#1f2937}
+  .row{display:grid;gap:10px;grid-template-columns:repeat(12,minmax(0,1fr))}
+  .col-12{grid-column:span 12}.col-6{grid-column:span 6}.col-4{grid-column:span 4}.col-3{grid-column:span 3}
+
+  label{display:block;margin-bottom:6px;color:#111827;font-weight:800;font-size:15px}
+  .field{position:relative}
+  input,select,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;background:var(--field);color:var(--text);outline:none}
+  textarea{min-height:110px;resize:vertical}
+  .muted{color:var(--muted);font-size:13px}
+  .req:after{content:" *";color:#dc2626}
+  .help{margin-top:6px;font-size:12.5px;color:#4b5563}
+
+  .lock{background:#f8fafc;border-color:#e5e7eb;color:#111827}
+  .lock[readonly]{cursor:not-allowed}
+  .picker-btn{position:absolute;right:8px;top:8px;border-radius:8px;border:1px solid #cbd5e1;background:#f9fafb;color:#111827;padding:6px 8px;cursor:pointer}
+  .picker-btn:hover{filter:brightness(1.05)}
+
+  .brand{display:flex;align-items:center;gap:14px;margin:6px 0 12px 0}
+  .brand img{height:56px;display:block}
+
+  .error{border-color:var(--danger-border)!important;background:var(--danger-bg)!important}
+  .error-msg{margin-top:6px;color:#991b1b;font-size:12px}
+  .hidden{display:none}
+
+  /* Banner validace */
+  #val-banner{
+    display:none; margin:10px 0 0 0; padding:10px 12px;
+    background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; border-radius:8px; font-weight:700;
+  }
+
+  /* Tisk */
+  .print-only{display:none}
+  @media print{
+    header,.toolbar,.picker-btn,.error-msg,#val-banner{display:none !important}
+    .card{box-shadow:none;border-color:#ddd;background:white;color:#111}
+    body{background:white;color:#111}
+    input,select,textarea{background:white;color:#111;border-color:#bbb}
+    .badge{background:#f3f4f6;border-color:#e5e7eb;color:#111}
+    #c-zdroj,#c-priciny{display:none !important}
+    #m-zdroj,#m-priciny{display:block !important}
+    .help{display:none !important}
+    a[href]:after{content:"" !important}
+    .print-hide{display:none !important}
+    .btn-del-svedek,.btn-add-svedek{display:none !important}
+    #btn-settings,#dlg-settings{display:none !important}
+  }
+
+  @media (max-width:900px){.col-6,.col-4,.col-3{grid-column:span 12}}
+
+  /* ⚙️ Nastavení – přesné vystředění ikony */
+  #btn-settings{
+    position:fixed;top:12px;right:12px;z-index:20;
+    border:1px solid var(--border); background:#ffffffcc;color:#111827;
+    border-radius:50%; width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);
+    padding:0; line-height:1; font-size:18px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Formulář – záznam o pracovním úrazu</h1>
+    <div class="subtitle">Sekce A–D • tisk • export do Wordu (.doc) • odeslání e‑mailem</div>
+
+    <div class="toolbar">
+      <button type="button" onclick="onPrint()">🖨️ Vytisknout</button>
+
+      <!-- Rozdělené akce -->
+      <div style="display:flex;flex-direction:column">
+        <button type="button" class="word" onclick="onSaveDocWord()">📝 Uložit do Wordu (.doc)</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column">
+        <button type="button" class="word" onclick="onSendMail()">📧 Odeslat e‑mailem</button>
+        <div class="hint">
+          Funguje jen v prohlížečích s <strong>Web Share API</strong> pro soubory
+          (např. <strong>Edge</strong>, <strong>Chrome</strong> na <strong>Windows 10/11</strong>) a pokud je
+          <strong>Outlook</strong> dostupný jako cíl „Sdílet“. <em>Firefox</em> nepodporuje.
+          (Web Share vyžaduje <strong>HTTPS</strong>.)
+        </div>
+      </div>
+
+      <button type="button" class="ghost" onclick="onClear()">♻️ Vymazat</button>
+    </div>
+
+    <!-- Banner validace -->
+    <div id="val-banner" role="alert">Doplňte prosím zvýrazněná povinná pole a zkuste to znovu.</div>
+  </div>
+</header>
+
+<!-- ⚙️ Nastavení příjemců + OWA-only (heslo 1991) -->
+<button type="button" id="btn-settings" title="Nastavení" onclick="openSettings()"><span aria-hidden="true">⚙️</span></button>
+
+<dialog id="dlg-settings" style="border:1px solid #e5e7eb;border-radius:12px;max-width:520px;padding:16px">
+  <form method="dialog" onsubmit="return false" style="display:flex;flex-direction:column;gap:10px">
+    <h3 style="margin:0 0 6px">Nastavení e‑mailu</h3>
+
+    <label style="font-weight:700">Příjemci (Komu)</label>
+    <p class="muted" style="margin:0 0 8px">Spravujte seznam příjemců. Lze přidat více e‑mailů.</p>
+    <div id="recipients-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+      <input id="inp-email-add" type="email" placeholder="novy.prijemce@firma.cz"
+             style="flex:1;padding:10px;border:1px solid #cbd5e1;border-radius:10px" />
+      <button type="button" class="ghost" onclick="addRecipientFromInput()">Přidat</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:6px 0">
+
+    <label style="display:flex;gap:10px;align-items:center">
+      <input id="inp-owa-only" type="checkbox">
+      <span><strong>Vždy použít OWA (přeskočit Sdílet)</strong><br>
+        <span class="muted">Stáhne .doc a otevře Outlook na webu s vyplněnými poli. Přílohu přetáhnete do okna zprávy.</span>
+      </span>
+    </label>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+      <button type="button" class="ghost" onclick="document.getElementById('dlg-settings').close()">Zrušit</button>
+      <button type="button" class="word" onclick="saveSettings()">Uložit</button>
+    </div>
+  </form>
+</dialog>
+
+<main class="wrap" id="print-root">
+  <!-- Logo -->
+  <div class="brand"><img id="brand-logo" alt="LE &amp; CO logo"></div>
+
+  <!-- ====== FORMULÁŘ A–D ====== -->
+  <form id="form-uraz" class="grid" onsubmit="return false" novalidate>
+    <!-- A -->
+    <section class="card">
+      <h2><span class="badge">A</span> Údaje o zaměstnavateli</h2>
+      <div class="row">
+        <div class="col-6 field">
+          <label class="req" for="a-zam">Název zaměstnavatele</label>
+          <input id="a-zam" value="LE &amp; CO – Ing. Jiří Lenc, s.r.o." readonly class="lock" title="Uzamčeno – nelze upravit">
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="a-ico">IČO</label>
+          <input id="a-ico" value="26502658" readonly class="lock" title="Uzamčeno – nelze upravit">
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-12 col-6 field">
+          <label class="req" for="a-sidlo">Sídlo (adresa)</label>
+          <input id="a-sidlo" value="Poděbradská 606, Jirny" readonly class="lock" title="Uzamčeno – nelze upravit">
+          <div class="error-msg hidden"></div>
+        </div>
+      </div>
+
+      <details id="opt-employer" style="margin-top:10px">
+        <summary><strong>Jiný zaměstnavatel (pokud se jedná o zaměstnance jiného zaměstnavatele)</strong></summary>
+        <div class="row" style="margin-top:10px">
+          <div class="col-6 field">
+            <label class="req" for="a-zam2">Název zaměstnavatele</label>
+            <input id="a-zam2" placeholder="Název jiného zaměstnavatele">
+            <div class="error-msg hidden"></div>
+          </div>
+          <div class="col-3 field">
+            <label class="req" for="a-ico2">IČO</label>
+            <input id="a-ico2" placeholder="IČO">
+            <div class="error-msg hidden"></div>
+          </div>
+          <div class="col-12 col-6 field">
+            <label class="req" for="a-sidlo2">Sídlo (adresa)</label>
+            <input id="a-sidlo2" placeholder="Adresa">
+            <div class="error-msg hidden"></div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- B -->
+    <section class="card">
+      <h2><span class="badge">B</span> Údaje o postiženém</h2>
+      <div class="row">
+        <div class="col-6 field">
+          <label class="req" for="b-jmeno">Jméno a příjmení</label>
+          <input id="b-jmeno" required>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="b-datum">Datum narození</label>
+          <input id="b-datum" type="date" required>
+          <button class="picker-btn" type="button" onclick="openPicker('b-datum')" title="Otevřít kalendář">📅</button>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="b-prace">Druh práce</label>
+          <input id="b-prace" required>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-6 field">
+          <label class="req" for="b-status">Postižený je</label>
+          <select id="b-status" required>
+            <option value="" disabled selected>— vyberte —</option>
+            <option>zaměstnanec v pracovním poměru</option>
+            <option>zaměstnanec zaměstnaný na základě dohod o pracích konaných mimo pracovní poměr</option>
+            <option>zaměstnanec jiného zaměstnavatele</option>
+          </select>
+          <div class="error-msg hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- C -->
+    <section class="card">
+      <h2><span class="badge">C</span> Údaje o úrazu</h2>
+      <div class="row">
+        <div class="col-3 field">
+          <label class="req" for="c-datum">Datum a hodina úrazu</label>
+          <input id="c-datum" type="datetime-local" required>
+          <button class="picker-btn" type="button" onclick="openPicker('c-datum')" title="Otevřít kalendář">📅</button>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="c-hodiny">Počet hodin odpracovaných před úrazem</label>
+          <input id="c-hodiny" type="number" min="0" step="0.5" required>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="c-pocet">Počet zraněných osob celkem</label>
+          <input id="c-pocet" type="number" min="1" value="1" required>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-3 field">
+          <label class="req" for="c-druh-urazu">Druh úrazu</label>
+          <select id="c-druh-urazu" required>
+            <option value="" disabled selected>— vyberte —</option>
+            <option>smrtelný</option>
+            <option>ostatní</option>
+          </select>
+          <div class="error-msg hidden"></div>
+        </div>
+
+        <div class="col-6 field">
+          <label class="req" for="c-druh-zraneni">Číselný kód a druh zranění (ESAW)</label>
+          <select id="c-druh-zraneni" required></select>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-6 field">
+          <label class="req" for="c-cast-tela">Číselný kód a zraněná část těla (ESAW)</label>
+          <select id="c-cast-tela" required></select>
+          <div class="error-msg hidden"></div>
+        </div>
+
+        <div class="col-6 field">
+          <label class="req" for="c-cinnost">Činnost, při které k úrazu došlo</label>
+          <input id="c-cinnost" required>
+          <div class="error-msg hidden"></div>
+        </div>
+        <div class="col-6 field">
+          <label class="req" for="c-misto">Místo, kde k úrazu došlo</label>
+          <input id="c-misto" required>
+          <div class="error-msg hidden"></div>
+        </div>
+
+        <div class="col-3 field">
+          <label class="req" for="c-pracoviste">Bylo místo úrazu pravidelným pracovištěm?</label>
+          <select id="c-pracoviste" required>
+            <option value="" disabled selected>— vyberte —</option>
+            <option>ANO</option>
+            <option>NE</option>
+          </select>
+          <div class="error-msg hidden"></div>
+        </div>
+
+        <div class="col-6 field">
+          <label class="req" for="c-zdroj">Co bylo zdrojem úrazu? (můžete vybrat více)</label>
+          <select id="c-zdroj" multiple size="8">
+            <option>dopravní prostředek</option>
+            <option>stroje a zařízení přenosná nebo mobilní</option>
+            <option>materiál, břemena, předměty (pád, přiražení, odlétnutí, náraz, zavalení)</option>
+            <option>pád na rovině, z výšky, do hloubky, propadnutí</option>
+            <option>nástroj, přístroj, nářadí</option>
+            <option>průmyslové škodliviny, chemické látky, biologické činitele</option>
+            <option>horké látky a předměty, oheň a výbušniny</option>
+            <option>stroje a stabilní zařízení</option>
+            <option>lidé, zvířata nebo přírodní živly</option>
+            <option>elektrická energie</option>
+            <option>jiný blíže nespecifikovaný zdroj</option>
+          </select>
+          <div class="help">Pro více položek držte <strong>Ctrl</strong> a klikejte myší. Pro souvislý výběr použijte <strong>Shift</strong>.</div>
+          <div class="error-msg hidden"></div>
+          <div id="m-zdroj" class="print-only muted"></div>
+        </div>
+
+        <div class="col-6 field">
+          <label class="req" for="c-priciny">Proč k úrazu došlo? (příčiny; výběr více možností)</label>
+          <select id="c-priciny" multiple size="8">
+            <option>pro poruchu nebo vadný stav některého ze zdrojů úrazu</option>
+            <option>pro špatné nebo nedostatečné vyhodnocení rizika</option>
+            <option>závady na pracovišti</option>
+            <option>pro nedostatečné osobní zajištění zaměstnance včetně OOPP</option>
+            <option>pro porušení předpisů vztahujících se k práci nebo pokynů zaměstnavatele</option>
+            <option>pro nepředvídatelné riziko práce nebo selhání lidského činitele</option>
+            <option>pro jiný, blíže nespecifikovatelný důvod</option>
+          </select>
+          <div class="help">Pro více položek držte <strong>Ctrl</strong> a klikejte myší. Pro souvislý výběr použijte <strong>Shift</strong>.</div>
+          <div class="error-msg hidden"></div>
+          <div id="m-priciny" class="print-only muted"></div>
+        </div>
+
+        <div class="col-12 field">
+          <label class="req" for="c-popis">Popis úrazového děje</label>
+          <textarea id="c-popis" required placeholder="Stručně a věcně popište průběh události…"></textarea>
+          <div class="error-msg hidden"></div>
+        </div>
+
+        <div class="col-3 field">
+          <label class="req" for="c-dech">Byla provedena dechová zkouška na alkohol?</label>
+          <select id="c-dech" required>
+            <option value="" disabled selected>— vyberte —</option>
+            <option>ANO</option>
+            <option>NE</option>
+          </select>
+          <div class="error-msg hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- D -->
+    <section class="card">
+      <h2><span class="badge">D</span> Potvrzující údaje</h2>
+      <p class="muted" style="font-size:16px;line-height:1.6">
+        Postižený svým podpisem stvrzuje, že byl před vyšetřováním příčin a okolností vzniku pracovního úrazu zaměstnavatelem poučen
+        o jeho povinnosti vypovídat pravdivě a nic nezamlčet a o právních následcích nepravdivé nebo neúplné výpovědi a rovněž čestně
+        prohlašuje, že jeho výpověď byla úplná a pravdivá.
+      </p>
+      <div class="row">
+        <div class="col-3 field">
+          <label for="d-datum-podpis">Datum a podpis postiženého (podle možností)</label>
+          <input id="d-datum-podpis" type="date">
+          <button class="picker-btn" type="button" onclick="openPicker('d-datum-podpis')" title="Otevřít kalendář">📅</button>
+        </div>
+
+        <div class="col-12">
+          <p class="muted" style="font-size:16px;line-height:1.6"><strong>Svědci čestně prohlašují</strong> a svým níže uvedeným podpisem stvrzují, že jejich výpověď byla úplná a pravdivá.</p>
+          <div id="svedci-list" class="list"></div>
+          <div style="margin-top:8px">
+            <button type="button" class="ghost btn-add-svedek" onclick="addSvedek()">➕ Přidat svědka</button>
+          </div>
+        </div>
+
+        <div class="col-12 field">
+          <label for="d-zapis">Zapisující zaměstnanec (datum, jméno a příjmení, pracovní zařazení a podpis)</label>
+          <textarea id="d-zapis" placeholder="Např.: 2025-10-02 – Luboš Jaroš, správce centra informací, podpis…"></textarea>
+        </div>
+      </div>
+    </section>
+  </form>
+</main>
+
+<script>
+"use strict";
+
+/* ===== KONFIG ===== */
+const STORAGE_FORM          = 'formular_uraz_v1';
+const STORAGE_RECIPIENTS    = 'formular_uraz_email_to_list';
+const STORAGE_OWA_ONLY      = 'formular_uraz_use_owa_only';
+const LOGO_SRC              = "LECO_nove.jpg";
+let   DEF_A = { zam:"", ico:"", sidlo:"" };
+
+/* ===== Pomocné ===== */
+function openPicker(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(typeof el.showPicker === "function"){ try{ el.showPicker(); return; }catch(e){} }
+  el.focus(); try{ el.click(); }catch(_){}
+}
+function isEmpty(v){ return !v || !String(v).trim(); }
+function todayLocalISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function safeFileName(s){return (s||'bez-jmena').replace(/[\\/:*?"<>|]+/g,'').trim().replace(/\s+/g,'_');}
+
+/* ===== Banner validace ===== */
+function showValidationBanner(firstErrorEl){
+  const banner = document.getElementById('val-banner');
+  if (banner) banner.style.display = 'block';
+  if (firstErrorEl && typeof firstErrorEl.scrollIntoView === 'function') {
+    firstErrorEl.scrollIntoView({behavior:'smooth', block:'center'});
+    try { firstErrorEl.focus({preventScroll:true}); } catch(_){}
+  }
+}
+
+/* ===== ESAW data ===== */
+const ESAW_INJURY=[{code:"000",label:"Neznámý nebo neurčený druh zranění"},{code:"010",label:"Rány a povrchová zranění"},{code:"011",label:"Povrchové zranění"},{code:"012",label:"Otevřené rány"},{code:"019",label:"Jiné typy ran a povrchových zranění"},{code:"020",label:"Zlomeniny kostí"},{code:"021",label:"Zavřené zlomeniny"},{code:"022",label:"Otevřené zlomeniny"},{code:"029",label:"Jiné typy zlomenin kostí"},{code:"030",label:"Vykloubení, vyvrtnutí, natažení"},{code:"031",label:"Vykloubení nebo neúplné vykloubení"},{code:"032",label:"Vyvrtnutí nebo natažení"},{code:"039",label:"Jiné typy vykloubení, vyvrtnutí, natažení"},{code:"040",label:"Traumatická amputace (ztráta části těla)"},{code:"050",label:"Otřes mozku a vnitřní zranění"},{code:"051",label:"Otřes mozku a vnitrolebeční zranění"},{code:"052",label:"Vnitřní zranění"},{code:"059",label:"Jiné typy otřesů mozku a vnitřních zranění"},{code:"060",label:"Popáleniny, opařeniny a omrzliny"},{code:"061",label:"Popáleniny a opařeniny (tepelné)"},{code:"062",label:"Chemické popáleniny (poleptání)"},{code:"063",label:"Omrzliny"},{code:"069",label:"Jiné typy popálenin, opařenin a omrzlin"},{code:"070",label:"Otravy a infekce"},{code:"071",label:"Akutní otravy"},{code:"072",label:"Akutní infekce"},{code:"079",label:"Jiné typy otrav a infekcí"},{code:"080",label:"Tonutí a dušení"},{code:"081",label:"Dušení"},{code:"082",label:"Tonutí bez smrtelných následků"},{code:"089",label:"Jiné typy tonutí a dušení"},{code:"090",label:"Účinky zvuku, vibrací a tlaku"},{code:"091",label:"Akutní ztráta sluchu"},{code:"092",label:"Působení tlaku (barotrauma)"},{code:"099",label:"Jiné účinky zvuku, vibrací a tlaku"},{code:"100",label:"Účinky extrémních teplot, světla a ozáření"},{code:"101",label:"Úžeh z tepla a slunečního záření"},{code:"102",label:"Účinky ozáření (netepelné)"},{code:"103",label:"Účinky snížené teploty"},{code:"109",label:"Jiné účinky extrémních teplot, světla a ozáření"},{code:"110",label:"Šok"},{code:"111",label:"Šoky po agresích a hrozbách"},{code:"112",label:"Traumatické šoky"},{code:"119",label:"Jiné typy šoků"},{code:"120",label:"Vícenásobné zranění"},{code:"999",label:"Jiná specifická zranění nezahrnutá do jiných kategorií"}];
+const ESAW_BODY=[{code:"00",label:"Zraněná část těla nespecifikovaná"},{code:"10",label:"Hlava bez podrobnějšího rozlišení, dále nespecifikovaná"},{code:"11",label:"Hlava, mozek, lebeční nervy a cévy"},{code:"12",label:"Tvář"},{code:"13",label:"Oko"},{code:"14",label:"Ucho"},{code:"15",label:"Zuby"},{code:"18",label:"Hlava – více postižených oblastí"},{code:"19",label:"Hlava – jiné části výše neuvedené"},{code:"20",label:"Krk včetně páteře a krčních obratlů"},{code:"21",label:"Krk včetně páteře a krčních obratlů"},{code:"29",label:"Krk – jiné části dosud neuvedené"},{code:"30",label:"Záda včetně páteře a zádových obratlů"},{code:"31",label:"Záda včetně páteře a zádových obratlů"},{code:"39",label:"Záda – jiné části výše neuvedené"},{code:"40",label:"Trup a orgány bez podrobnějšího rozlišení"},{code:"41",label:"Hrudní koš, žebra včetně kloubů a lopatek"},{code:"42",label:"Oblast hrudníku včetně orgánů"},{code:"43",label:"Pánevní a břišní oblast včetně orgánů"},{code:"48",label:"Trup – více postižených oblastí"},{code:"49",label:"Trup – jiné části výše neuvedené"},{code:"50",label:"Horní končetiny bez podrobnějšího rozlišení"},{code:"51",label:"Rameno a ramenní klouby"},{code:"52",label:"Ruka včetně lokte"},{code:"53",label:"Ruka od zápěstí dolů"},{code:"54",label:"Prst"},{code:"55",label:"Zápěstí"},{code:"58",label:"Horní končetiny – více postižených oblastí"},{code:"59",label:"Horní končetiny – jiné části výše neuvedené"},{code:"60",label:"Dolní končetiny bez podrobnějšího rozlišení"},{code:"61",label:"Bedra, bederní klouby"},{code:"62",label:"Noha včetně kolena"},{code:"63",label:"Kotník"},{code:"64",label:"Noha od kotníku dolů"},{code:"65",label:"Prst na noze"},{code:"68",label:"Dolní končetiny – více postižených oblastí"},{code:"69",label:"Dolní končetiny – jiné části výše neuvedené"},{code:"70",label:"Celé tělo a více oblastí bez podrobnějšího rozlišení"},{code:"71",label:"Celé tělo (systémové účinky)"},{code:"78",label:"Tělo – více postižených oblastí"},{code:"79",label:"Tělo – jiná zraněná část těla výše neuvedená"}];
+
+/* ===== Svědci ===== */
+let svedekId=0;
+function addSvedek(valueDate="", valueName=""){
+  const root=document.getElementById('svedci-list'); if(!root) return;
+  const id=++svedekId;
+  const row=document.createElement('div'); row.className='list-item'; row.id='svedek-'+id;
+  row.style.display="grid"; row.style.gridTemplateColumns="1fr 2fr auto"; row.style.gap="8px"; row.style.margin="6px 0";
+  row.innerHTML =
+   `<div class="field">
+      <label for="sv-${id}-date">Datum</label>
+      <input id="sv-${id}-date" type="date" value="${valueDate}">
+      <button class="picker-btn" type="button" onclick="openPicker('sv-${id}-date')" title="Otevřít kalendář">📅</button>
+    </div>
+    <div class="field">
+      <label for="sv-${id}-name">Jméno a příjmení svědka</label>
+      <input id="sv-${id}-name" value="${valueName}" placeholder="Např.: Jan Novák">
+    </div>
+    <div class="actions" style="display:flex;align-items:end">
+      <button type="button" class="ghost btn-del-svedek" onclick="delSvedek(${id})">✖️</button>
+    </div>`;
+  root.appendChild(row);
+  autosaveDebounced();
+}
+function delSvedek(id){ const el=document.getElementById('svedek-'+id); if(el) el.remove(); autosaveDebounced(); }
+
+/* ===== Validace ===== */
+function clearErrors(){
+  document.querySelectorAll('.error').forEach(el=>el.classList.remove('error'));
+  document.querySelectorAll('.error-msg').forEach(m=>{m.classList.add('hidden'); m.textContent='';});
+}
+function showError(el,msg){
+  if(!el) return;
+  el.classList.add('error');
+  const box=el.closest('.field'); const m=box?.querySelector('.error-msg'); if(m){ m.textContent=msg; m.classList.remove('hidden'); }
+}
+function validateSectionA(){
+  let ok=true;
+  const aZ=document.getElementById('a-zam'), aI=document.getElementById('a-ico'), aS=document.getElementById('a-sidlo');
+  const z2=document.getElementById('a-zam2'), i2=document.getElementById('a-ico2'), s2=document.getElementById('a-sidlo2');
+  const anyOther = !isEmpty(z2.value) || !isEmpty(i2.value) || !isEmpty(s2.value);
+  if (anyOther){
+    if (isEmpty(z2.value)){ showError(z2,'Vyplňte název jiného zaměstnavatele.'); ok=false; }
+    if (isEmpty(i2.value)){ showError(i2,'Vyplňte IČO jiného zaměstnavatele.'); ok=false; }
+    if (isEmpty(s2.value)){ showError(s2,'Vyplňte sídlo jiného zaměstnavatele.'); ok=false; }
+    aZ.value=""; aI.value=""; aS.value="";
+  } else {
+    if (isEmpty(aZ.value)){ showError(aZ,'Chybí název zaměstnavatele.'); ok=false; }
+    if (isEmpty(aI.value)){ showError(aI,'Chybí IČO zaměstnavatele.'); ok=false; }
+    if (isEmpty(aS.value)){ showError(aS,'Chybí sídlo zaměstnavatele.'); ok=false; }
+  }
+  return ok;
+}
+function validateRequired(){
+  clearErrors(); let ok=true; let firstErr=null;
+
+  if (!validateSectionA()) ok=false;
+
+  [['b-jmeno','Vyplňte jméno a příjmení.'],
+   ['b-datum','Vyberte datum narození.'],
+   ['b-prace','Vyplňte druh práce.'],
+   ['b-status','Vyberte status postiženého.']].forEach(([id,msg])=>{
+     const el=document.getElementById(id);
+     if(!el || !el.value){ showError(el,msg); ok=false; if(!firstErr) firstErr=el; }
+  });
+
+  [['c-datum','Zadejte datum a čas úrazu.'],
+   ['c-hodiny','Uveďte počet hodin.'],
+   ['c-pocet','Uveďte počet zraněných osob.'],
+   ['c-druh-urazu','Vyberte druh úrazu.'],
+   ['c-druh-zraneni','Vyberte druh zranění (ESAW).'],
+   ['c-cast-tela','Vyberte zraněnou část těla (ESAW).'],
+   ['c-cinnost','Vyplňte činnost.'],
+   ['c-misto','Vyplňte místo.'],
+   ['c-pracoviste','Vyberte ANO/NE.'],
+   ['c-popis','Vyplňte popis děje.'],
+   ['c-dech','Vyberte ANO/NE.']].forEach(([id,msg])=>{
+     const el=document.getElementById(id);
+     if(!el || !el.value){ showError(el,msg); ok=false; if(!firstErr) firstErr=el; }
+  });
+
+  const zdroj=document.getElementById('c-zdroj'), pric=document.getElementById('c-priciny');
+  if(!(zdroj?.selectedOptions?.length>0)){ showError(zdroj,'Vyberte alespoň jednu možnost.'); ok=false; if(!firstErr) firstErr=zdroj; }
+  if(!(pric?.selectedOptions?.length>0)){ showError(pric,'Vyberte alespoň jednu možnost.'); ok=false; if(!firstErr) firstErr=pric; }
+
+  const banner = document.getElementById('val-banner');
+  if (!ok) { showValidationBanner(firstErr); }
+  else if (banner) { banner.style.display = 'none'; }
+
+  return ok;
+}
+
+/* ===== Sběr dat ===== */
+function getVal(id){ const el=document.getElementById(id); return el && 'value' in el ? (el.value||'').trim() : ''; }
+function getMulti(id){ const el=document.getElementById(id); return el ? Array.from(el.selectedOptions).map(o=>o.textContent.trim()) : []; }
+function byCode(arr, code){ return arr.find(x=>x.code===code)||null; }
+function updatePrintMirrors(){
+  const zd=document.getElementById('m-zdroj'); if(zd) zd.textContent=getMulti('c-zdroj').join('; ')||'—';
+  const pr=document.getElementById('m-priciny'); if(pr) pr.textContent=getMulti('c-priciny').join('; ')||'—';
+  const e1=getVal('a-zam2'), e2=getVal('a-ico2'), e3=getVal('a-sidlo2');
+  const det=document.getElementById('opt-employer'); if(det){ det.classList.toggle('print-hide', !(e1||e2||e3)); }
+}
+function collectData(){
+  const svedci=[]; document.querySelectorAll('#svedci-list .list-item').forEach(row=>{
+    const date=row.querySelector('input[type="date"]')?.value||""; const name=row.querySelector('input[type="text"]')?.value||"";
+    if(date || name) svedci.push({date,name});
+  });
+  const d={
+    A_Zamestnavatel:getVal('a-zam'), A_Sidlo:getVal('a-sidlo'), A_ICO:getVal('a-ico'),
+    A_JinyZam:getVal('a-zam2'), A_JinyICO:getVal('a-ico2'), A_JineSidlo:getVal('a-sidlo2'),
+    B_Jmeno:getVal('b-jmeno'), B_DatumNarozeni:getVal('b-datum'), B_DruhPrace:getVal('b-prace'), B_Status:getVal('b-status'),
+    C_DatumCas:getVal('c-datum'), C_HodinyPred:getVal('c-hodiny'), C_PocetZr:getVal('c-pocet'), C_DruhUrazu:getVal('c-druh-urazu'),
+    C_DruhZraneniKod:getVal('c-druh-zraneni'), C_CastTelaKod:getVal('c-cast-tela'),
+    C_Cinnost:getVal('c-cinnost'), C_Misto:getVal('c-misto'), C_PravPracoviste:getVal('c-pracoviste'),
+    C_Zdroj:getMulti('c-zdroj'), C_Priciny:getMulti('c-priciny'), C_Popis:getVal('c-popis'), C_Dech:getVal('c-dech'),
+    D_DatumPodpisPostizeneho:getVal('d-datum-podpis'), D_Svedci:svedci, D_Zapisujici:getVal('d-zapis')
+  };
+  const inj=byCode(ESAW_INJURY,d.C_DruhZraneniKod), bod=byCode(ESAW_BODY,d.C_CastTelaKod);
+  d.C_DruhZraneniPopis=inj?inj.label:""; d.C_CastTelaPopis=bod?bod.label:"";
+  return d;
+}
+
+/* ===== Uložení/Obnova ===== */
+function saveToStorage(){try{localStorage.setItem(STORAGE_FORM, JSON.stringify(collectData()));}catch(e){}}
+function restoreFromStorage(){
+  try{
+    const raw=localStorage.getItem(STORAGE_FORM); if(!raw) return;
+    const d=JSON.parse(raw);
+    document.getElementById('a-zam').value=d.A_Zamestnavatel ?? DEF_A.zam;
+    document.getElementById('a-ico').value=d.A_ICO ?? DEF_A.ico;
+    document.getElementById('a-sidlo').value=d.A_Sidlo ?? DEF_A.sidlo;
+    document.getElementById('a-zam2').value=d.A_JinyZam ?? "";
+    document.getElementById('a-ico2').value=d.A_JinyICO ?? "";
+    document.getElementById('a-sidlo2').value=d.A_JineSidlo ?? "";
+    otherEmployerChanged();
+
+    document.getElementById('b-jmeno').value=d.B_Jmeno ?? "";
+    document.getElementById('b-datum').value=d.B_DatumNarozeni ?? "";
+    document.getElementById('b-prace').value=d.B_DruhPrace ?? "";
+    document.getElementById('b-status').value=d.B_Status ?? "";
+
+    document.getElementById('c-datum').value=d.C_DatumCas ?? "";
+    document.getElementById('c-hodiny').value=d.C_HodinyPred ?? "";
+    document.getElementById('c-pocet').value=d.C_PocetZr ?? "";
+    document.getElementById('c-druh-urazu').value=d.C_DruhUrazu ?? "";
+    document.getElementById('c-druh-zraneni').value=d.C_DruhZraneniKod ?? "";
+    document.getElementById('c-cast-tela').value=d.C_CastTelaKod ?? "";
+    document.getElementById('c-cinnost').value=d.C_Cinnost ?? "";
+    document.getElementById('c-misto').value=d.C_Misto ?? "";
+    document.getElementById('c-pracoviste').value=d.C_PravPracoviste ?? "";
+
+    const setMultiByText=(id,items)=>{const el=document.getElementById(id);const set=new Set((items||[]).map(s=>String(s).trim()));Array.from(el.options).forEach(o=>o.selected=set.has(o.textContent.trim()));}
+    setMultiByText('c-zdroj', d.C_Zdroj ?? []);
+    setMultiByText('c-priciny', d.C_Priciny ?? []);
+
+    document.getElementById('c-popis').value=d.C_Popis ?? "";
+    document.getElementById('c-dech').value=d.C_Dech ?? "";
+
+    const root=document.getElementById('svedci-list'); root.innerHTML=''; svedekId=0;
+    (Array.isArray(d.D_Svedci)&&d.D_Svedci.length? d.D_Svedci : [{date:'',name:''}]).forEach(s=>addSvedek(s.date||'', s.name||''));
+    document.getElementById('d-datum-podpis').value=d.D_DatumPodpisPostizeneho ?? "";
+    document.getElementById('d-zapis').value=d.D_Zapisujici ?? "";
+  }catch(e){}
+}
+function debounce(fn,t=300){let h;return(...a)=>{clearTimeout(h);h=setTimeout(()=>fn(...a),t);};}
+const autosaveDebounced=debounce(saveToStorage,300);
+
+/* ===== Sekce A – defaulty vs. jiný zaměstnavatel ===== */
+function captureDefaultsA(){
+  DEF_A={ zam:document.getElementById('a-zam').value, ico:document.getElementById('a-ico').value, sidlo:document.getElementById('a-sidlo').value };
+}
+function otherEmployerChanged(){
+  const z2=getVal('a-zam2'), i2=getVal('a-ico2'), s2=getVal('a-sidlo2');
+  const any=!!(z2||i2||s2);
+  const aZ=document.getElementById('a-zam'), aI=document.getElementById('a-ico'), aS=document.getElementById('a-sidlo');
+  if(any){ aZ.value=""; aI.value=""; aS.value=""; } else { aZ.value=DEF_A.zam; aI.value=DEF_A.ico; aS.value=DEF_A.sidlo; }
+}
+
+/* ===== Logo → dataURL ===== */
+async function loadLogoDataURL(){
+  const img=document.getElementById('brand-logo'); if(!img) return "";
+  if(!img.src) img.src=LOGO_SRC;
+  if(!img.complete || !img.naturalWidth){ await new Promise(res=>{ img.onload=res; img.onerror=res; }); }
+  try{ const cv=document.createElement('canvas'); cv.width=img.naturalWidth; cv.height=img.naturalHeight; cv.getContext('2d').drawImage(img,0,0); return cv.toDataURL('image/png'); }catch(_){ return ""; }
+}
+function dataURLParts(durl){ const m=/^data:([^;]+);base64,(.*)$/i.exec(durl||""); return m?{mime:m[1],base64:m[2]}:null; }
+
+/* ===== Word (.doc MHTML) ===== */
+function buildReadablePairs(d){
+  const R=[]; const H=t=>R.push([t,""]); const P=(k,v)=>R.push([k,v||""]);
+  H("A) Údaje o zaměstnavateli"); P("Název zaměstnavatele",d.A_Zamestnavatel); P("Sídlo (adresa)",d.A_Sidlo); P("IČO",d.A_ICO);
+  if(d.A_JinyZam||d.A_JinyICO||d.A_JineSidlo){ P("Jiný zaměstnavatel",d.A_JinyZam); P("IČO (jiný)",d.A_JinyICO); P("Sídlo (jiný)",d.A_JineSidlo); }
+  H("B) Údaje o postiženém"); P("Jméno a příjmení",d.B_Jmeno); P("Datum narození",d.B_DatumNarozeni); P("Druh práce",d.B_DruhPrace); P("Postižený je",d.B_Status);
+  H("C) Údaje o úrazu"); P("Datum a čas úrazu",d.C_DatumCas); P("Hodiny před úrazem",d.C_HodinyPred); P("Počet zraněných osob",d.C_PocetZr); P("Druh úrazu",d.C_DruhUrazu);
+  P("Druh zranění (kód – popis)", d.C_DruhZraneniKod? `${d.C_DruhZraneniKod} — ${d.C_DruhZraneniPopis}`:"");
+  P("Zraněná část těla (kód – popis)", d.C_CastTelaKod? `${d.C_CastTelaKod} — ${d.C_CastTelaPopis}`:"");
+  P("Činnost",d.C_Cinnost); P("Místo úrazu",d.C_Misto); P("Pravidelné pracoviště",d.C_PravPracoviste);
+  P("Zdroj úrazu (více)",d.C_Zdroj.join("; ")); P("Příčiny (více)",d.C_Priciny.join("; ")); P("Popis děje",d.C_Popis); P("Dechová zkouška",d.C_Dech);
+  H("D) Potvrzující údaje"); P("Datum/podpis postiženého",d.D_DatumPodpisPostizeneho);
+  (d.D_Svedci||[]).forEach((s,i)=>P(`Svědek ${i+1}`,(s.date? s.date+" – ":"")+(s.name||""))); P("Zapisující zaměstnanec",d.D_Zapisujici);
+  return R;
+}
+function buildMhtmlHtmlBody(rows, hasLogo){
+  return `
+  <html><head><meta charset="utf-8">
+    <style>
+      @page Section1 { size:595.3pt 841.9pt; margin:28.35pt; }
+      div.Section1 { page:Section1; }
+      body{font-family:Segoe UI,Arial,sans-serif;color:#111}
+      h1{font-size:18pt;margin:0 0 10pt 0}
+      .logo{margin:0 0 8pt 0}
+      table{border-collapse:collapse;width:100%}
+      td{border:1px solid #ddd;padding:6pt;vertical-align:top}
+      td.k{width:34%;background:#f3f4f6;font-weight:700}
+      .sec{background:#e5e7eb;font-weight:700;text-transform:uppercase}
+    </style>
+  </head>
+  <body><div class="Section1">
+    ${hasLogo ? `<div class="logo">cid:logo1</div>` : ``}
+    <h1>Záznam o pracovním úrazu</h1>
+    <table>
+      ${rows.map(([k,v])=> v==="" ? `<tr><td class="sec" colspan="2">${k}</td></tr>` : `<tr><td class="k">${k}</td><td>${String(v||"").replace(/</g,"&lt;")}</td></tr>`).join("")}
+    </table>
+  </div></body></html>`;
+}
+async function buildDocMhtmlBlob(){
+  const d = collectData(); const rows = buildReadablePairs(d);
+  const composeDate=todayLocalISO(); const victimName=safeFileName(d.B_Jmeno); const fileName=`${victimName} - ${composeDate}.doc`;
+  const logoDataURL=await loadLogoDataURL(); const hasLogo=!!logoDataURL; const htmlBody=buildMhtmlHtmlBody(rows, hasLogo);
+  const boundary="----=_NextPart_"+Date.now();
+  let mhtml=""; mhtml+="MIME-Version: 1.0\r\n"; mhtml+=`Content-Type: multipart/related; type="text/html"; boundary="${boundary}"\r\n\r\n`;
+  mhtml+=`--${boundary}\r\nContent-Type: text/html; charset="utf-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n${htmlBody}\r\n\r\n`;
+  if(hasLogo){ const p=dataURLParts(logoDataURL); const base64=(p.base64.match(/.{1,76}/g)||[p.base64]).join("\r\n");
+    mhtml+=`--${boundary}\r\nContent-Type: ${p.mime}\r\nContent-Transfer-Encoding: base64\r\nContent-Location: logo1\r\nContent-ID: <logo1>\r\n\r\n${base64}\r\n\r\n`;
+  }
+  mhtml+=`--${boundary}--`;
+  const blob=new Blob([mhtml],{type:"application/msword;charset=utf-8"});
+  return { blob, fileName };
+}
+
+/* ===== Příjemci, OWA-only & nastavení ===== */
+function getRecipients(){
+  try{const raw=localStorage.getItem(STORAGE_RECIPIENTS);const arr=raw?JSON.parse(raw):null;if(Array.isArray(arr)&&arr.length>0) return arr;}catch(_){}
+  return ['jana.charvatova@le-co.cz'];
+}
+function setRecipients(list){ localStorage.setItem(STORAGE_RECIPIENTS, JSON.stringify(list)); }
+function getOwaOnly(){ try{ return localStorage.getItem(STORAGE_OWA_ONLY)==="1"; }catch(_){ return false; } }
+function setOwaOnly(flag){ try{ localStorage.setItem(STORAGE_OWA_ONLY, flag ? "1" : "0"); }catch(_){ } }
+
+function renderRecipientsChips(container,list){
+  container.innerHTML=""; list.forEach((email,idx)=>{ const chip=document.createElement('span');
+    chip.style.cssText="display:inline-flex;align-items:center;gap:6px;background:#eef2ff;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;font-size:13px";
+    chip.textContent=email+" "; const btn=document.createElement('button'); btn.type="button"; btn.textContent="✖"; btn.title="Odebrat";
+    btn.style.cssText="margin-left:6px;border:0;background:transparent;cursor:pointer;color:#111";
+    btn.onclick=()=>{list.splice(idx,1);renderRecipientsChips(container,list);};
+    chip.appendChild(btn); container.appendChild(chip);
+  });
+}
+function openSettings(){
+  const pass=prompt("Zadejte heslo pro nastavení (4 čísla):"); if(pass!=="1991"){ alert("Nesprávné heslo."); return; }
+  const dlg=document.getElementById('dlg-settings'); const list=getRecipients().slice();
+  dlg.dataset.work=JSON.stringify(list); renderRecipientsChips(document.getElementById('recipients-list'), list);
+  document.getElementById('inp-email-add').value="";
+  document.getElementById('inp-owa-only').checked = getOwaOnly();
+  dlg.showModal();
+}
+function addRecipientFromInput(){
+  const dlg=document.getElementById('dlg-settings'); const list=JSON.parse(dlg.dataset.work||"[]");
+  const inp=document.getElementById('inp-email-add'); const v=(inp.value||"").trim(); const re=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!re.test(v)){ alert("Zadejte platný e‑mail."); return; } if(!list.includes(v)) list.push(v); dlg.dataset.work=JSON.stringify(list);
+  renderRecipientsChips(document.getElementById('recipients-list'), list); inp.value="";
+}
+function saveSettings(){
+  const dlg=document.getElementById('dlg-settings');
+  const list=JSON.parse(dlg.dataset.work||"[]").filter(Boolean);
+  if(!list.length){ alert("Musí být alespoň jeden příjemce."); return; }
+  setRecipients(list);
+  setOwaOnly(document.getElementById('inp-owa-only').checked);
+  dlg.close();
+  alert("Nastavení uloženo.\nPříjemci: " + list.join(", ") + "\nVždy použít OWA: " + (getOwaOnly() ? "ANO" : "NE"));
+}
+
+/* ===== Akce tlačítek ===== */
+async function onSaveDocWord(){
+  if(!validateRequired()){ window.scrollTo({top:0,behavior:'smooth'}); return; }
+  const { blob, fileName } = await buildDocMhtmlBlob();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click(); URL.revokeObjectURL(a.href);
+}
+function openOwaComposeWithRecipientsAndSubject(subject){
+  const recipients=getRecipients();
+  const url=`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(recipients.join(','))}&subject=${encodeURIComponent(subject)}`;
+  window.open(url,"_blank","noopener");
+}
+async function onSendMail(){
+  if(!validateRequired()){ window.scrollTo({top:0,behavior:'smooth'}); return; }
+  const { blob, fileName } = await buildDocMhtmlBlob();
+  const file = new File([blob], fileName, { type: "application/msword" });
+  const subject = buildEmailSubject();
+
+  // Volba "Vždy použít OWA"
+  if (getOwaOnly()){
+    try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click(); URL.revokeObjectURL(a.href);}catch(_){}
+    openOwaComposeWithRecipientsAndSubject(subject);
+    return;
+  }
+
+  // Web Share API (HTTPS; dostupnost cíle závisí na OS). Přidáme i url, což Windows někdy vyžaduje.
+  if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
+    try{
+      await navigator.share({ files:[file], title:"Záznam o pracovním úrazu", url: location.href });
+      return;
+    }catch(e){ console.warn("Share zrušeno/selhalo:", e); /* pokračuj fallbackem */ }
+  }
+
+  // Fallback: stáhnout soubor + otevřít OWA s příjemci/předmětem
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fileName; a.click(); URL.revokeObjectURL(a.href);}catch(_){}
+  alert("Sdílení do Outlooku není dostupné. Soubor byl uložen – otevřu Outlook na webu s příjemci a předmětem (přílohu přetáhněte do okna zprávy).");
+  openOwaComposeWithRecipientsAndSubject(subject);
+}
+
+function onPrint(){ if(!validateRequired()){ window.scrollTo({top:0,behavior:'smooth'}); return; } updatePrintMirrors(); window.print(); }
+function onClear(){
+  const ok=confirm("Opravdu chcete smazat celý formulář včetně uložených dat?\nTuto akci nelze vrátit zpět."); if(!ok) return;
+  const form=document.getElementById('form-uraz'); form.reset(); localStorage.removeItem(STORAGE_FORM);
+  otherEmployerChanged(); const root=document.getElementById('svedci-list'); root.innerHTML=''; svedekId=0; addSvedek(); clearErrors();
+}
+
+/* ===== Předmět zprávy ===== */
+function buildEmailSubject(){ const d=collectData(); const nm=d.B_Jmeno||"neuvedeno"; const dt=todayLocalISO(); return `Kniha úrazů / ${nm}, ${dt}`; }
+
+/* ===== INIT ===== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const img=document.getElementById('brand-logo'); if(img) img.src=LOGO_SRC;
+  captureDefaultsA();
+
+  // Naplnění ESAW
+  const fill=(selId,arr)=>{ const sel=document.getElementById(selId); if(!sel) return;
+    sel.innerHTML='<option value="" disabled selected>— vyberte —</option>';
+    arr.forEach(x=>{ const o=document.createElement('option'); o.value=x.code; o.textContent=`${x.code} — ${x.label}`; sel.appendChild(o); });
+  };
+  fill('c-druh-zraneni', ESAW_INJURY); fill('c-cast-tela',  ESAW_BODY);
+
+  // Autosave
+  const form=document.getElementById('form-uraz');
+  form.addEventListener('input', autosaveDebounced);
+  form.addEventListener('change', autosaveDebounced);
+
+  // Jiný zaměstnavatel – přepínání
+  ['a-zam2','a-ico2','a-sidlo2'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener('input', ()=>{ otherEmployerChanged(); autosaveDebounced(); });
+    el.addEventListener('change', ()=>{ otherEmployerChanged(); autosaveDebounced(); });
+  });
+
+  // Svědek – prázdná řádka
+  if(!document.getElementById('svedci-list').children.length){ addSvedek(); }
+
+  // Obnova dat
+  restoreFromStorage();
+});
+
+/* ===== Tisk – zrcadlení multi-select ===== */
+function onBeforePrint(){ updatePrintMirrors(); }
+if(window.matchMedia){
+  const mql=window.matchMedia('print');
+  (mql.addEventListener ? mql.addEventListener('change',e=>{ if(e.matches) onBeforePrint(); })
+                        : mql.addListener(e=>{ if(e.matches) onBeforePrint(); }));
+}
+window.onbeforeprint=onBeforePrint;
+
+/* ===== Připnutí funkcí na window (pro jistotu) ===== */
+window.onPrint = onPrint;
+window.onSaveDocWord = onSaveDocWord;
+window.onSendMail = onSendMail;
+window.onClear = onClear;
+window.openSettings = openSettings;
+window.addRecipientFromInput = addRecipientFromInput;
+window.saveSettings = saveSettings;
+window.openPicker = openPicker;
+</script>
+</body>
+</html>
